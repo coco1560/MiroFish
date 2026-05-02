@@ -18,15 +18,12 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: mirofish-linux-x64
-            binary: mirofish
             archive: mirofish-linux-x64.tar.gz
           - os: macos-latest
             artifact: mirofish-macos-x64
-            binary: mirofish
             archive: mirofish-macos-x64.tar.gz
           - os: windows-latest
             artifact: mirofish-windows-x64
-            binary: mirofish.exe
             archive: mirofish-windows-x64.zip
 
     runs-on: ${{ matrix.os }}
@@ -48,6 +45,8 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
 
       - name: Install Python dependencies
         run: |
@@ -65,34 +64,27 @@ jobs:
           cd backend
           uv run pyinstaller \
             --onefile \
-            --name "${{ matrix.binary }}" \
+            --name mirofish \
             --add-data "../frontend/dist${SEP}frontend_dist" \
             --add-data "../static${SEP}static" \
             --add-data "../locales${SEP}locales" \
             --collect-all camel \
             --collect-all zep_cloud \
-            --hidden-import flask \
-            --hidden-import flask_cors \
-            --hidden-import openai \
-            --hidden-import pydantic \
-            --hidden-import dotenv \
-            --hidden-import charset_normalizer \
-            --hidden-import chardet \
             production.py
 
       - name: Package (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           cd backend/dist
-          chmod +x "${{ matrix.binary }}"
-          tar -czf "${{ matrix.archive }}" "${{ matrix.binary }}"
+          chmod +x mirofish
+          tar -czf "${{ matrix.archive }}" mirofish
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
           cd backend/dist
-          7z a "${{ matrix.archive }}" "${{ matrix.binary }}" > /dev/null
+          7z a "${{ matrix.archive }}" mirofish.exe > /dev/null
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
