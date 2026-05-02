@@ -53,29 +53,25 @@ jobs:
           python-version: "3.11"
 
       - name: Install Python dependencies
+        working-directory: backend
         run: |
-          cd backend
           uv sync
           uv pip install pyinstaller
 
       - name: Build executable
         shell: bash
+        working-directory: backend
+        env:
+          UV_PROJECT_ENVIRONMENT: .venv
         run: |
           SEP=":"
           if [ "${{ matrix.os }}" = "windows-latest" ]; then SEP=";"; fi
-
-          cd backend
-
-          # 获取 venv site-packages 路径，确保 PyInstaller 能找到所有依赖
-          SITE_PACKAGES=$(uv run python -c "import site; print(site.getsitepackages()[0])")
-          echo "site-packages: $SITE_PACKAGES"
 
           uv run pyinstaller \
             --onedir \
             --noconfirm \
             --clean \
             --name mirofish \
-            --paths "$SITE_PACKAGES" \
             --add-data "../frontend/dist${SEP}frontend_dist" \
             --add-data "../static${SEP}static" \
             --add-data "../locales${SEP}locales" \
@@ -88,13 +84,6 @@ jobs:
             --hidden-import itsdangerous \
             --hidden-import blinker \
             --hidden-import click \
-            --exclude-module torch \
-            --exclude-module torchvision \
-            --exclude-module torchaudio \
-            --exclude-module tensorflow \
-            --exclude-module tensorboard \
-            --exclude-module triton \
-            --exclude-module nvidia \
             production.py
 
       - name: Package (Linux/macOS)
@@ -111,7 +100,6 @@ jobs:
         run: |
           cd backend/dist
           7z a "${{ matrix.archive }}" mirofish > /dev/null
-          # mirofish is a directory (--onedir output), contains mirofish.exe + _internal/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
