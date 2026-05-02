@@ -54,6 +54,8 @@ jobs:
 
       - name: Install Python dependencies
         working-directory: backend
+        env:
+          VIRTUAL_ENV: ${{ github.workspace }}/backend/.venv
         run: |
           uv sync
           uv pip install pyinstaller
@@ -62,12 +64,13 @@ jobs:
         shell: bash
         working-directory: backend
         env:
-          UV_PROJECT_ENVIRONMENT: .venv
+          VIRTUAL_ENV: ${{ github.workspace }}/backend/.venv
         run: |
           SEP=":"
           if [ "${{ matrix.os }}" = "windows-latest" ]; then SEP=";"; fi
 
-          uv run pyinstaller \
+          # 使用 python -m PyInstaller 确保 sys.executable 正确
+          uv run python -m PyInstaller \
             --onedir \
             --noconfirm \
             --clean \
@@ -80,6 +83,7 @@ jobs:
             --collect-all jinja2 \
             --collect-all camel \
             --collect-all zep_cloud \
+            --hidden-import flask \
             --hidden-import markupsafe \
             --hidden-import itsdangerous \
             --hidden-import blinker \
