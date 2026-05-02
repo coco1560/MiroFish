@@ -69,6 +69,19 @@ jobs:
           SEP=":"
           if [ "${{ matrix.os }}" = "windows-latest" ]; then SEP=";"; fi
 
+          # 排除 camel-ai 传递引入但应用未使用的巨型依赖，
+          # 这些包会导致 Looking for dynamic libraries 步骤卡死或超时
+          EXCLUDES="
+            --exclude-module torch
+            --exclude-module torchvision
+            --exclude-module torchaudio
+            --exclude-module tensorflow
+            --exclude-module tensorboard
+            --exclude-module triton
+            --exclude-module nvidia
+            --exclude-module matplotlib
+          "
+
           # 使用 python -m PyInstaller 确保 sys.executable 正确
           uv run python -m PyInstaller \
             --onedir \
@@ -88,6 +101,7 @@ jobs:
             --hidden-import itsdangerous \
             --hidden-import blinker \
             --hidden-import click \
+            $EXCLUDES \
             production.py
 
       - name: Package (Linux/macOS)
