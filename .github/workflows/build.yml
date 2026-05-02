@@ -71,7 +71,9 @@ jobs:
           echo "site-packages: $SITE_PACKAGES"
 
           uv run pyinstaller \
-            --onefile \
+            --onedir \
+            --noconfirm \
+            --clean \
             --name mirofish \
             --paths "$SITE_PACKAGES" \
             --add-data "../frontend/dist${SEP}frontend_dist" \
@@ -86,13 +88,21 @@ jobs:
             --hidden-import itsdangerous \
             --hidden-import blinker \
             --hidden-import click \
+            --exclude-module torch \
+            --exclude-module torchvision \
+            --exclude-module torchaudio \
+            --exclude-module tensorflow \
+            --exclude-module tensorboard \
+            --exclude-module triton \
+            --exclude-module nvidia \
             production.py
 
       - name: Package (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          cd backend/dist
+          cd backend/dist/mirofish
           chmod +x mirofish
+          cd ..
           tar -czf "${{ matrix.archive }}" mirofish
 
       - name: Package (Windows)
@@ -100,7 +110,8 @@ jobs:
         shell: bash
         run: |
           cd backend/dist
-          7z a "${{ matrix.archive }}" mirofish.exe > /dev/null
+          7z a "${{ matrix.archive }}" mirofish > /dev/null
+          # mirofish is a directory (--onedir output), contains mirofish.exe + _internal/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
