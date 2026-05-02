@@ -65,14 +65,27 @@ jobs:
           if [ "${{ matrix.os }}" = "windows-latest" ]; then SEP=";"; fi
 
           cd backend
+
+          # 获取 venv site-packages 路径，确保 PyInstaller 能找到所有依赖
+          SITE_PACKAGES=$(uv run python -c "import site; print(site.getsitepackages()[0])")
+          echo "site-packages: $SITE_PACKAGES"
+
           uv run pyinstaller \
             --onefile \
             --name mirofish \
+            --paths "$SITE_PACKAGES" \
             --add-data "../frontend/dist${SEP}frontend_dist" \
             --add-data "../static${SEP}static" \
             --add-data "../locales${SEP}locales" \
+            --collect-all flask \
+            --collect-all werkzeug \
+            --collect-all jinja2 \
             --collect-all camel \
             --collect-all zep_cloud \
+            --hidden-import markupsafe \
+            --hidden-import itsdangerous \
+            --hidden-import blinker \
+            --hidden-import click \
             production.py
 
       - name: Package (Linux/macOS)
